@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -16,6 +17,9 @@ namespace ShellDummie
                 //listFiles
                 //makeDir
 
+                var directoryCommands = new List<string>() { "changeDir", "deleteDir", "listFiles", "makeDir" };
+                var processComamnds = new List<string>() { "listProc", "killProc" };
+
                 Thread.Sleep(200);
                 var currentPath = Directory.GetCurrentDirectory();
                 Console.Write($"{currentPath}>");
@@ -23,89 +27,69 @@ namespace ShellDummie
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
-                var path = "";
+                var argument = "";
                 var command = line;
 
                 if (line.Contains(" "))
                 {
-                    path = line.Remove(0, line.IndexOf(" ") + 1);
+                    argument = line.Remove(0, line.IndexOf(" ") + 1);
                     command = line.Remove(line.IndexOf(" "));
                 }
 
-                switch (command)
+                if(directoryCommands.Contains(command))
                 {
-                    case "changeDir":
-                        path = Path.Combine(currentPath, path);
-                        ChangeDirectory(path);
-                        break;
-                    case "deleteDir":
-                        DeleteDirectory(path);
-                        break;
-                    case "listAll":
-                        ListAll(currentPath);
-                        break;
-                    case "makeDir":
-                        path = Path.Combine(currentPath, path);
-                        MakeDirectory(path);
-                        break;
-                    default:
-                        Console.WriteLine("Command is not recognized.");
-                        continue;
+                    ExecuteDirectories(command, currentPath, argument);
+                    continue;
                 }
-                
+
+                if (processComamnds.Contains(command))
+                {
+                    ExecuteProcesses(command, argument);
+                    continue;
+                }
+                Console.WriteLine("Command is not recognized.");
+
+
             }
         }
 
-        private static void ChangeDirectory(string newPath)
+
+        private static void ExecuteDirectories(string command, string currentPath,  string path)
         {
-            try
+            switch (command)
             {
-                Directory.SetCurrentDirectory(newPath);
-            }
-            catch(Exception)
-            {
-                Console.WriteLine("Directory not found.");
+                case "changeDir":
+                    path = Path.Combine(currentPath, path);
+                    DirectoryMethods.ChangeDirectory(path);
+                    break;
+                case "deleteDir":
+                    DirectoryMethods.DeleteDirectory(path);
+                    break;
+                case "listAll":
+                    DirectoryMethods.ListAll(currentPath);
+                    break;
+                case "makeDir":
+                    path = Path.Combine(currentPath, path);
+                    DirectoryMethods.MakeDirectory(path);
+                    break;
             }
         }
 
-        private static void DeleteDirectory(string directoryPath)
+        private static void ExecuteProcesses(string command, string argument = "")
         {
-            try
+            switch (command)
             {
-                Directory.Delete(directoryPath);
-            }
-            catch(Exception)
-            {
-                Console.WriteLine("Directory not found.");
+                case "listProc":
+                    ProcessMethods.ListAllBackgroundProcesses();
+                    break;
+                case "killProc":
+                    var processId = int.Parse(argument);
+                    ProcessMethods.KillProcess(processId);
+                    break;
+                default:
+                    return;
             }
         }
 
-        private static void ListAll(string path)
-        {
-            try
-            {
-                var directories = Directory.GetDirectories(path);
-                var files = Directory.GetFiles(path);
-                var items = files.Concat(directories).OrderBy(x => x);
-                foreach (var item in items)
-                    Console.WriteLine(item.Split(@"\").Last());
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Directory not found.");
-            }
-        }
-
-        private static void MakeDirectory(string name)
-        {
-            try
-            {
-                Directory.CreateDirectory(name);
-            }
-            catch(Exception)
-            {
-                Console.WriteLine("Could not create directory");
-            }
-        }
     }
 }
